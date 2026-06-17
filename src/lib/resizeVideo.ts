@@ -1,0 +1,47 @@
+import { fetchFile } from '@ffmpeg/util';
+import type { FFmpeg } from '@ffmpeg/ffmpeg';
+import { resetFfmpegFiles } from '../hooks/useFfmpeg';
+
+function inputName(file: File): string {
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'mov';
+  return `input.${ext}`;
+}
+
+export async function resizeVideo(
+  ffmpeg: FFmpeg,
+  file: File,
+  maxEdge: number,
+): Promise<{ blob: Blob; filename: string }> {
+  const inName = inputName(file);
+  const outName = 'output.mp4';
+  resetFfmpegFiles(ffmpeg, [inName, outName]);
+
+  await ffmpeg.writeFile(inName, await fetchFile(file));
+
+  const scale = `scale='min(${maxEdge},iw)':-2`;
+  await ffmpeg.exec([
+    '-i',
+    inName,
+    '-vf',
+    scale,
+    '-c:v',
+    'libx264',
+    '-crf',
+    '28',
+    '-preset',
+    'fast',
+    '-movflags',
+    '+faststart',
+    '-an',
+    outName,
+  ]);
+
+  const data = await ffmpeg.readFile(outName);
+  const bytes =
+    data instanceof Uint8Array ? data : new TextEncoder().encode(data);
+  const base = file.name.replace(/\.[^.]+$/, '');
+  return {
+    blob: new Blob([Uint8Array.from(bytes)], { type: 'video/mp4' }),
+    filename: `${base}-resized.mp4`,
+  };
+}

@@ -39,13 +39,20 @@ export function ResultRow({ result, originalName }: ResultRowProps) {
               <span>
                 {output.filename} ({formatBytes(output.blob.size)})
               </span>
-              <button
-                type="button"
+              <span
+                role="button"
+                tabIndex={0}
                 className="download-btn"
                 onClick={() => downloadBlob(output.blob, output.filename)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    downloadBlob(output.blob, output.filename);
+                  }
+                }}
               >
                 Download
-              </button>
+              </span>
             </li>
           ))}
         </ul>

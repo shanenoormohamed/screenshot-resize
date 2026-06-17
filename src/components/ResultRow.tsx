@@ -41,6 +41,7 @@ export function ResultRow({ result, originalName }: ResultRowProps) {
               </span>
               <button
                 type="button"
+                className="download-btn"
                 onClick={() => downloadBlob(output.blob, output.filename)}
               >
                 Download

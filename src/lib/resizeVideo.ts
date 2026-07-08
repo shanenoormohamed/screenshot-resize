@@ -18,7 +18,8 @@ export async function resizeVideo(
 
   await ffmpeg.writeFile(inName, await fetchFile(file));
 
-  const scale = `scale='min(${maxEdge},iw)':-2`;
+  // Cap long edge (landscape: limit width; portrait: limit height); -2 keeps dims even for libx264
+  const scale = `scale='if(gt(iw,ih),min(${maxEdge},iw),-2)':'if(gt(iw,ih),-2,min(${maxEdge},ih))'`;
   await ffmpeg.exec([
     '-i',
     inName,

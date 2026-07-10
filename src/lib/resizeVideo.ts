@@ -2,6 +2,7 @@ import { fetchFile } from '@ffmpeg/util';
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
 import { resetFfmpegFiles } from '../hooks/useFfmpeg';
 import { readVideoDimensions } from './fileMeta';
+import { resizedOutputFilename } from './filenames';
 
 function inputName(file: File): string {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'mov';
@@ -27,20 +28,21 @@ function videoScaleFilter(
   return `scale='min(${maxEdge},iw)':-2`;
 }
 
-function videoBlobFromFfmpegData(data: Uint8Array | string): Blob {
+function videoBytesFromFfmpegData(data: Uint8Array | string): Uint8Array {
   if (typeof data === 'string') {
     throw new Error('Video output was not binary');
   }
   if (data.byteLength === 0) {
     throw new Error('Video output was empty');
   }
-  return new Blob([data.slice()], { type: 'video/mp4' });
+  return data.slice();
 }
 
 export async function resizeVideo(
   ffmpeg: FFmpeg,
   file: File,
   maxEdge: number,
+  outputStem?: string,
 ): Promise<{ blob: Blob; filename: string }> {
   const inName = inputName(file);
   const outName = 'output.mp4';
@@ -80,9 +82,10 @@ export async function resizeVideo(
   }
 
   const data = await ffmpeg.readFile(outName);
-  const base = file.name.replace(/\.[^.]+$/, '');
+  const filename = resizedOutputFilename(file.name, 'mp4', outputStem);
+  const bytes = videoBytesFromFfmpegData(data);
   return {
-    blob: videoBlobFromFfmpegData(data),
-    filename: `${base}-resized.mp4`,
+    blob: new Blob([new Uint8Array(bytes)], { type: 'video/mp4' }),
+    filename,
   };
 }

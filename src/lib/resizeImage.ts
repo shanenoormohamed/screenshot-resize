@@ -1,3 +1,5 @@
+import { resizedOutputFilename } from './filenames';
+
 export function fitToMaxEdge(
   width: number,
   height: number,
@@ -43,7 +45,11 @@ export async function resizeStillImage(
 export function outputFilename(
   originalName: string,
   format: 'png' | 'jpeg',
+  preferredStem?: string,
 ): string {
-  const base = originalName.replace(/\.[^.]+$/, '');
-  return `${base}-resized.${format === 'png' ? 'png' : 'jpg'}`;
+  return resizedOutputFilename(
+    originalName,
+    format === 'png' ? 'png' : 'jpg',
+    preferredStem,
+  );
 }

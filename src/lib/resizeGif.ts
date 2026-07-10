@@ -1,6 +1,7 @@
 import { decompressFrames, parseGIF, type ParsedFrame } from 'gifuct-js';
 import { GIFEncoder, applyPalette, quantize } from 'gifenc';
 import { fitToMaxEdge } from './resizeImage';
+import { resizedOutputFilename } from './filenames';
 
 type GifFrame = ParsedFrame;
 
@@ -74,7 +75,9 @@ export async function resizeGif(file: File, maxEdge: number): Promise<Blob> {
   return new Blob([Uint8Array.from(bytes)], { type: 'image/gif' });
 }
 
-export function gifOutputFilename(originalName: string): string {
-  const base = originalName.replace(/\.[^.]+$/, '');
-  return `${base}-resized.gif`;
+export function gifOutputFilename(
+  originalName: string,
+  preferredStem?: string,
+): string {
+  return resizedOutputFilename(originalName, 'gif', preferredStem);
 }

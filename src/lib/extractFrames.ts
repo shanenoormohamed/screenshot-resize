@@ -2,6 +2,7 @@ import { fetchFile } from '@ffmpeg/util';
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
 import { resetFfmpegFiles } from '../hooks/useFfmpeg';
 import { readVideoDimensions } from './fileMeta';
+import { sanitizeFilenameStem } from './filenames';
 
 function inputName(file: File): string {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'mov';
@@ -20,6 +21,7 @@ export async function extractFrames(
   file: File,
   maxEdge: number,
   intervalSec: number,
+  outputStem?: string,
 ): Promise<{ blob: Blob; filename: string }[]> {
   const inName = inputName(file);
   const pattern = 'frame_%03d.png';
@@ -50,18 +52,20 @@ export async function extractFrames(
 
   await ffmpeg.exec(args);
 
-  const base = file.name.replace(/\.[^.]+$/, '');
+  const stem = outputStem?.trim()
+    ? sanitizeFilenameStem(outputStem)
+    : sanitizeFilenameStem(file.name);
   const outputs: { blob: Blob; filename: string }[] = [];
 
   for (let i = 1; i <= 30; i += 1) {
     const name = `frame_${String(i).padStart(3, '0')}.png`;
     try {
       const data = await ffmpeg.readFile(name);
-      const bytes =
-        data instanceof Uint8Array ? data : new TextEncoder().encode(data);
+      if (typeof data === 'string') continue;
+      const frameName = `${stem}-frame-${String(i).padStart(3, '0')}.png`;
       outputs.push({
-        blob: new Blob([Uint8Array.from(bytes)], { type: 'image/png' }),
-        filename: `${base}-frame-${String(i).padStart(3, '0')}.png`,
+        blob: new Blob([new Uint8Array(data.slice())], { type: 'image/png' }),
+        filename: frameName,
       });
       ffmpeg.deleteFile(name);
     } catch {

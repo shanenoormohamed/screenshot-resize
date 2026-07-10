@@ -19,6 +19,7 @@ export type InputFile = {
   kind: FileKind;
   width?: number;
   height?: number;
+  outputStem?: string;
 };
 
 export type ProcessedOutput = {

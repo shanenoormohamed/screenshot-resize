@@ -2,10 +2,16 @@ import JSZip from 'jszip';
 import type { ProcessedOutput } from '../types';
 
 export function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
+  const named =
+    blob instanceof File && blob.name === filename
+      ? blob
+      : new File([blob], filename, {
+          type: blob.type || 'application/octet-stream',
+        });
+  const url = URL.createObjectURL(named);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = filename;
+  anchor.download = named.name;
   anchor.click();
   URL.revokeObjectURL(url);
 }

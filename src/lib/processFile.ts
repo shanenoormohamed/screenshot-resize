@@ -21,18 +21,19 @@ export async function processFile(
       settings.jpegQuality,
     );
     onProgress?.(1);
-    return [
-      {
-        blob,
-        filename: outputFilename(input.file.name, settings.stillFormat),
-      },
-    ];
+    const filename = outputFilename(
+      input.file.name,
+      settings.stillFormat,
+      input.outputStem,
+    );
+    return [{ blob, filename }];
   }
 
   if (input.kind === 'gif') {
     const blob = await resizeGif(input.file, settings.maxEdge);
     onProgress?.(1);
-    return [{ blob, filename: gifOutputFilename(input.file.name) }];
+    const filename = gifOutputFilename(input.file.name, input.outputStem);
+    return [{ blob, filename }];
   }
 
   if (!ffmpeg) {
@@ -40,7 +41,12 @@ export async function processFile(
   }
 
   if (settings.movMode === 'resize') {
-    const result = await resizeVideo(ffmpeg, input.file, settings.maxEdge);
+    const result = await resizeVideo(
+      ffmpeg,
+      input.file,
+      settings.maxEdge,
+      input.outputStem,
+    );
     onProgress?.(1);
     return [result];
   }
@@ -50,6 +56,7 @@ export async function processFile(
     input.file,
     settings.maxEdge,
     settings.frameIntervalSec,
+    input.outputStem,
   );
   onProgress?.(1);
   return frames;

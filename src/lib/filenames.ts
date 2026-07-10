@@ -10,14 +10,18 @@ export function sanitizeFilenameStem(name: string): string {
   return stem || 'asset';
 }
 
+export function defaultOutputStem(originalName: string): string {
+  return `${stripExtension(originalName)}_resized`;
+}
+
 export function resizedOutputFilename(
   originalName: string,
   extension: string,
   preferredStem?: string,
 ): string {
-  const stem = preferredStem?.trim()
-    ? sanitizeFilenameStem(preferredStem)
-    : sanitizeFilenameStem(originalName);
   const ext = extension.replace(/^\./, '').toLowerCase();
-  return `${stem}-resized.${ext}`;
+  if (preferredStem?.trim()) {
+    return `${sanitizeFilenameStem(preferredStem)}.${ext}`;
+  }
+  return `${sanitizeFilenameStem(defaultOutputStem(originalName))}.${ext}`;
 }

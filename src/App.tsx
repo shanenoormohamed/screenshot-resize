@@ -47,8 +47,21 @@ function App() {
   }, []);
 
   const removeFile = useCallback((id: string) => {
-    setFiles((prev) => prev.filter((file) => file.id !== id));
+    setFiles((prev) => {
+      const removed = prev.find((file) => file.id === id);
+      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((file) => file.id !== id);
+    });
     setResults((prev) => prev.filter((result) => result.inputId !== id));
+  }, []);
+
+  const updateOutputStem = useCallback((id: string, outputStem: string) => {
+    setFiles((prev) =>
+      prev.map((file) =>
+        file.id === id ? { ...file, outputStem } : file,
+      ),
+    );
+    setResults([]);
   }, []);
 
   const updateResult = useCallback(
@@ -141,7 +154,12 @@ function App() {
   }, [results]);
 
   const clearAll = useCallback(() => {
-    setFiles([]);
+    setFiles((prev) => {
+      for (const file of prev) {
+        if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
+      }
+      return [];
+    });
     setResults([]);
   }, []);
 
@@ -156,7 +174,12 @@ function App() {
       </header>
 
       <DropZone onFiles={addFiles} disabled={processing} />
-      <FileList files={files} onRemove={removeFile} />
+      <FileList
+        files={files}
+        onRemove={removeFile}
+        onOutputStemChange={updateOutputStem}
+        disabled={processing}
+      />
       <SettingsPanel
         settings={settings}
         onChange={setSettings}
@@ -210,7 +233,7 @@ function App() {
                 <ResultRow
                   key={result.inputId}
                   result={result}
-                  originalName={input?.file.name ?? 'Unknown'}
+                  originalName={input?.outputStem ?? input?.file.name ?? 'Unknown'}
                 />
               );
             })}

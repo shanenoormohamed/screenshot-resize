@@ -4,6 +4,8 @@ import type { InputFile } from '../types';
 type FileListProps = {
   files: InputFile[];
   onRemove: (id: string) => void;
+  onOutputStemChange: (id: string, outputStem: string) => void;
+  disabled?: boolean;
 };
 
 const KIND_LABELS = {
@@ -12,7 +14,12 @@ const KIND_LABELS = {
   video: 'Video',
 };
 
-export function FileList({ files, onRemove }: FileListProps) {
+export function FileList({
+  files,
+  onRemove,
+  onOutputStemChange,
+  disabled = false,
+}: FileListProps) {
   if (files.length === 0) return null;
 
   return (
@@ -20,11 +27,28 @@ export function FileList({ files, onRemove }: FileListProps) {
       <h2>Files ({files.length})</h2>
       <ul>
         {files.map((item) => (
-          <li key={item.id} className="file-list__item">
-            <div className="file-list__info">
-              <span className="file-list__name">{item.file.name}</span>
-              <span className="file-list__meta">
-                {KIND_LABELS[item.kind]}
+          <li key={item.id} className="file-card">
+            <div className="file-card__preview">
+              {item.kind === 'video' ? (
+                <video src={item.previewUrl} muted playsInline />
+              ) : (
+                <img src={item.previewUrl} alt={item.outputStem} />
+              )}
+            </div>
+            <div className="file-card__body">
+              <input
+                className="file-card__name"
+                type="text"
+                value={item.outputStem}
+                placeholder="Output name"
+                disabled={disabled}
+                aria-label={`Output name for ${item.file.name}`}
+                onChange={(event) =>
+                  onOutputStemChange(item.id, event.target.value)
+                }
+              />
+              <span className="file-card__meta">
+                {item.file.name} · {KIND_LABELS[item.kind]}
                 {item.width && item.height
                   ? ` · ${item.width}×${item.height}`
                   : ''}
@@ -34,7 +58,8 @@ export function FileList({ files, onRemove }: FileListProps) {
             </div>
             <button
               type="button"
-              className="file-list__remove"
+              className="file-card__remove"
+              disabled={disabled}
               onClick={() => onRemove(item.id)}
             >
               Remove

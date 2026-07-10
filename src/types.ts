@@ -17,9 +17,10 @@ export type InputFile = {
   id: string;
   file: File;
   kind: FileKind;
+  previewUrl: string;
+  outputStem: string;
   width?: number;
   height?: number;
-  outputStem?: string;
 };
 
 export type ProcessedOutput = {

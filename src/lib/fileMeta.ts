@@ -1,5 +1,6 @@
 import type { FileKind, InputFile } from '../types';
 import { ACCEPTED_TYPES } from '../types';
+import { defaultOutputStem } from './filenames';
 
 export function detectKind(file: File): FileKind | null {
   if (file.type === 'image/gif') return 'gif';
@@ -53,7 +54,13 @@ export async function buildInputFile(file: File): Promise<InputFile | null> {
   if (!kind || !isAccepted(file)) return null;
 
   const id = crypto.randomUUID();
-  const entry: InputFile = { id, file, kind };
+  const entry: InputFile = {
+    id,
+    file,
+    kind,
+    previewUrl: URL.createObjectURL(file),
+    outputStem: defaultOutputStem(file.name),
+  };
 
   try {
     if (kind === 'video') {

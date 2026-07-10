@@ -18,8 +18,10 @@ export async function resizeVideo(
 
   await ffmpeg.writeFile(inName, await fetchFile(file));
 
-  // Cap long edge (landscape: limit width; portrait: limit height); -2 keeps dims even for libx264
-  const scale = `scale='if(gt(iw,ih),min(${maxEdge},iw),-2)':'if(gt(iw,ih),-2,min(${maxEdge},ih))'`;
+  // Scale to fit within maxEdge on the longest side, only shrink never enlarge.
+  // force_original_aspect_ratio=decrease avoids expression quoting issues in ffmpeg.wasm.
+  // Second scale pass ensures even dimensions required by libx264.
+  const scale = `scale=${maxEdge}:${maxEdge}:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`;
   await ffmpeg.exec([
     '-i',
     inName,

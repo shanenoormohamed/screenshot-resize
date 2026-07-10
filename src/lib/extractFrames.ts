@@ -1,10 +1,18 @@
 import { fetchFile } from '@ffmpeg/util';
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
 import { resetFfmpegFiles } from '../hooks/useFfmpeg';
+import { readVideoDimensions } from './fileMeta';
 
 function inputName(file: File): string {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'mov';
   return `input.${ext}`;
+}
+
+function isMovFile(file: File): boolean {
+  return (
+    file.type === 'video/quicktime' ||
+    /\.mov$/i.test(file.name)
+  );
 }
 
 export async function extractFrames(
@@ -19,10 +27,18 @@ export async function extractFrames(
 
   await ffmpeg.writeFile(inName, await fetchFile(file));
 
-  const scale = `scale='min(${maxEdge},iw)':-2`;
+  const { width, height } = await readVideoDimensions(file);
+  const scale =
+    height > width
+      ? `scale=-2:'min(${maxEdge},ih)'`
+      : `scale='min(${maxEdge},iw)':-2`;
   const fps = intervalSec > 0 ? 1 / intervalSec : 1;
 
-  await ffmpeg.exec([
+  const args = ['-threads', '1'];
+  if (isMovFile(file)) {
+    args.push('-f', 'mov');
+  }
+  args.push(
     '-i',
     inName,
     '-vf',
@@ -30,7 +46,9 @@ export async function extractFrames(
     '-frames:v',
     '30',
     pattern,
-  ]);
+  );
+
+  await ffmpeg.exec(args);
 
   const base = file.name.replace(/\.[^.]+$/, '');
   const outputs: { blob: Blob; filename: string }[] = [];
